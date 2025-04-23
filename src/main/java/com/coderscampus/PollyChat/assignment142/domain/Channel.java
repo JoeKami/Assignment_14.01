@@ -4,7 +4,10 @@ import jakarta.persistence.*;
 
 @Entity
 public class Channel {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long channelId;
+
     private String channelName;
 
     public Long getChannelId() {
