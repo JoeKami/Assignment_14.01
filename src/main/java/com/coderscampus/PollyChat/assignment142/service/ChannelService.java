@@ -15,11 +15,13 @@ public class ChannelService {
 
     @Autowired
     public ChannelService(ChannelRepository channelRepository) {
-    this.channelRepository = channelRepository;
+
+        this.channelRepository = channelRepository;
     }
 
     public List<Channel> getAllChannels() {
-        return channelRepository.findAll(); 
+
+        return channelRepository.findAll();
     }
 
     public Channel getChannelByChannelId(Long channelId) throws ChangeSetPersister.NotFoundException {
@@ -27,11 +29,13 @@ public class ChannelService {
     }
 
     public Channel createChannel(Channel channel) {
+
         return channelRepository.save(channel);
     }
 
     public void deleteChannel(Long channelId) {
-           channelRepository.deleteById(channelId);
+
+        channelRepository.deleteById(channelId);
     }
 
 
