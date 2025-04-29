@@ -2,8 +2,6 @@ package com.coderscampus.PollyChat.assignment142.domain;
 
 import jakarta.persistence.*;
 
-import java.util.List;
-
 @Entity
 public class Channel {
     @Id
@@ -11,7 +9,10 @@ public class Channel {
     private Long channelId;
 
     private String channelName;
-
+    
+    @OneToMany
+    @JoinColumn(name = "channel_id")
+    private String Messages;
 
     public Long getChannelId() {
         return channelId;
@@ -29,8 +30,11 @@ public class Channel {
         this.channelName = channelName;
     }
 
+    public String getMessages() {
+        return Messages;
+    }
 
-    public List<Message> getMessages() {
-        return null;
+    public void setMessages(String messages) {
+        Messages = messages;
     }
 }

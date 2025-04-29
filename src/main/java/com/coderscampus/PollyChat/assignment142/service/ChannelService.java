@@ -1,6 +1,7 @@
 package com.coderscampus.PollyChat.assignment142.service;
 
 import com.coderscampus.PollyChat.assignment142.domain.Channel;
+import com.coderscampus.PollyChat.assignment142.domain.Message;
 import com.coderscampus.PollyChat.assignment142.repository.ChannelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister;
@@ -39,4 +40,7 @@ public class ChannelService {
     }
 
 
+    public void sendMessage(Long channelId, Message message) throws ChangeSetPersister.NotFoundException {
+        channelRepository.findById(getChannelByChannelId(channelId).getChannelId()).ifPresent(channel -> channel.getMessages().add(message));
+    }
 }

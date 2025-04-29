@@ -25,6 +25,7 @@ public class UserController {
     public String welcome(Model model) {
         model.addAttribute("user", new User());
         model.addAttribute("channel", new Channel());
+        model.addAttribute("channels", channelService.getAllChannels());
         return "welcome";
     }
 
