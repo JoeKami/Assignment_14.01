@@ -34,6 +34,6 @@ public class ChannelController {
 
     public String deleteChannel(@PathVariable Long channelId) throws ChangeSetPersister.NotFoundException {
         channelService.deleteChannel(channelId);
-        return "redirect:/welcome";
+        return "redirect:/channel-list";
     }
 }
