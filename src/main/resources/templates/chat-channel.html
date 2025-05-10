@@ -1,11 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Title</title>
+    <title>Chat Channel</title>
+    <link rel="stylesheet" th:href="@{/css/chat-channel.css(v=${#dates.createNow().getTime()})}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script th:src="@{/js/chat.js(v=${#dates.createNow().getTime()})}" defer></script>
 </head>
 <body>
+    <div class="page-header">
+        <h1 th:text="${currentChannel.channelName}">Channel Name</h1>
+    </div>
+    
+    <div class="chat-container">
+        <!-- Channel List Sidebar -->
+        <div class="channel-sidebar">
+            <div class="sidebar-header">
+                <h2>Channels</h2>
+            </div>
+            <div class="channel-list">
+                <ul>
+                    <li th:each="channel : ${channels}">
+                        <a th:href="@{/channel/{id}(id=${channel.channelId}, windowId=${windowId})}" 
+                           th:text="${channel.channelName}"
+                           th:class="${channel.channelId == currentChannel.channelId ? 'active' : ''}">
+                            <i class="fas fa-hashtag"></i>
+                            <span th:text="${channel.channelName}">Channel Name</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
 
+        <!-- Main Chat Area -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <h2 th:text="${currentChannel.channelName}">Channel Name</h2>
+            </div>
+            
+            <div class="messages-container" id="messages">
+                <!-- Messages will be dynamically added here -->
+                <div th:each="message : ${messages}" 
+                     th:class="${message.user.username == currentUser.username ? 'message-sent' : 'message-received'}">
+                    <div class="message-bubble">
+                        <div class="message-header">
+                            <div class="user-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <span class="username" th:text="${message.user.username}">Username</span>
+                            <span class="timestamp" th:text="${#temporals.format(message.timestamp, 'HH:mm')}">00:00</span>
+                        </div>
+                        <div class="message-content" th:text="${message.content}">Message content</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Input Area -->
+            <div class="message-input-container">
+                <form th:action="@{/channel/{id}/send(id=${currentChannel.channelId}, windowId=${windowId})}" 
+                      method="post" 
+                      class="message-form">
+                    <input type="text" name="content" placeholder="Type your message..." required>
+                    <button type="submit">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

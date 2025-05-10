@@ -3,27 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <title>Welcome</title>
+    <link rel="stylesheet" th:href="@{/css/welcome.css}">
 </head>
 <body>
-    <h1>WELCOME TO POLLY CHAT</h1>
-    <form action="/welcome" method="post">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
-        <br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        <br>
-        <input type="submit" value="Login">
-    </form>
-    <h2>Channels</h2>
-    <ul>
-        <li th:each="channel : ${channels}">
-            <a th:href="@{/channel/{channelId}(channelId=${channel.channelId})}" th:text="${channel.channelName}">Channel</a>
-        </li>
-    </ul>
-    <form action="welcome.html" method="post">
+    <!-- Error Message Display -->
+    <div th:if="${error}" class="error-message">
+        <p th:text="${error}">Error message</p>
+    </div>
 
-    </form>
+    <div class="bubble-container" th:if="${username}">
+        <div class="bubble" th:if="${username}">
+            <p th:text="${username} + ' is signed in!'"></p>
+        </div>
 
+        <form th:action="@{/logout(windowId=${windowId})}" method="get" class="logout-form">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+
+    <h1>WELCOME TO CLOUDY CHAT</h1>
+
+    <div class="container">
+        <div class="box">
+            <h2>Sign In</h2>
+            <form th:action="@{/register(windowId=${windowId})}" th:object="${user}" method="post">
+                <label for="username">Username:</label>
+                <input type="text" th:field="*{username}" id="username" required>
+                <br><br>
+                <input type="submit" value="Login">
+            </form>
+        </div>
+
+        <div class="box">
+            <h2>Channels</h2>
+            <ul>
+                <li th:each="channel : ${channels}">
+                    <a th:href="@{/channel/{id}(id=${channel.channelId}, windowId=${windowId})}" th:text="${channel.channelName}">Channel</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="box">
+            <h2>Want To Create A New Channel?</h2>
+            <form th:action="@{/create-channel(windowId=${windowId})}" th:object="${channel}" method="post">
+                <label for="channelName">Name That Channel:</label>
+                <input type="text" th:field="*{channelName}" id="channelName" required>
+                <br><br>
+                <input type="submit" value="Create Channel">
+            </form>
+        </div>
+    </div>
 </body>
 </html>

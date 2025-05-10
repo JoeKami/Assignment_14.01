@@ -1,7 +1,8 @@
 package com.coderscampus.PollyChat.assignment142.domain;
 
 import jakarta.persistence.*;
-import org.antlr.v4.runtime.misc.NotNull;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 @Entity
 public class Message {
@@ -20,6 +21,15 @@ public class Message {
     @NotNull
     private String content;
 
+    @Column(nullable = true)
+    private LocalDateTime timestamp;
+
+    @PrePersist
+    protected void onCreate() {
+        if (timestamp == null) {
+            timestamp = LocalDateTime.now();
+        }
+    }
 
     public User getUser() {
         return user;
@@ -43,5 +53,13 @@ public class Message {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 }

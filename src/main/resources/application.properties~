@@ -1,5 +1,5 @@
 spring.application.name=assignment14.2
-spring.datasource.url=jdbc:mysql://localhost:3306/polly_chat
+spring.datasource.url=jdbc:mysql://localhost:3306/your_database_name
 spring.datasource.username=root
 spring.datasource.password=LlSTKJFsB*0*
 spring.jpa.hibernate.ddl-auto=update
