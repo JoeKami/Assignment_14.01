@@ -6,32 +6,15 @@
     <title>Chat Channel</title>
     <link rel="stylesheet" th:href="@{/css/chat-channel.css(v=${#dates.createNow().getTime()})}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script th:src="@{/js/theme.js}" defer></script>
     <script th:src="@{/js/chat.js(v=${#dates.createNow().getTime()})}" defer></script>
 </head>
 <body>
-    <!-- User Bubble with Dropdown -->
-    <div class="user-bubble-container" th:if="${currentUser}">
-        <div class="user-bubble" onclick="toggleDropdown()">
-            <span th:text="${currentUser.username}">Username</span>
-            <i class="fas fa-caret-down"></i>
-        </div>
-        <div class="dropdown-menu" id="userDropdown">
-            <button type="button" class="dropdown-item" onclick="toggleDarkMode()">
-                <i class="fas fa-moon"></i> <span id="themeToggleText">Dark Mode</span>
-            </button>
-            <form th:action="@{/logout(windowId=${windowId})}" method="get">
-                <button type="submit" class="dropdown-item">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </form>
-        </div>
-    </div>
-
     <div class="page-header">
         <h1 th:text="${currentChannel.channelName}">Channel Name</h1>
         <div class="channel-actions" th:if="${currentUser}">
             <button class="edit-channel-btn" onclick="showEditChannelModal()">
-                <i class="fas fa-edit"></i> Edit Channel
+                <i class="fas fa-edit"></i> Edit Channel Name
             </button>
             <form th:action="@{/channel/{id}/delete(id=${currentChannel.channelId}, windowId=${windowId})}" 
                   method="post" 
@@ -48,7 +31,26 @@
         <!-- Channel List Sidebar -->
         <div class="channel-sidebar">
             <div class="sidebar-header">
-                <h2>Channels</h2>
+                <div class="sidebar-header-content">
+                    <h2>Channels</h2>
+                    <div class="user-bubble-container" th:if="${currentUser}">
+                        <div class="user-bubble" onclick="toggleDropdown(event)">
+                            <span th:text="${currentUser.username}">Username</span>
+                            <i class="fas fa-caret-down"></i>
+                        </div>
+                        <div class="dropdown-menu" id="userDropdown">
+                            <button type="button" class="dropdown-item" onclick="toggleDarkMode()">
+                                <i class="fas fa-moon"></i> <span id="themeToggleText">Dark Mode</span>
+                            </button>
+                            <form th:action="@{/logout}" method="post" style="display: inline;">
+                                <input type="hidden" name="windowId" th:value="${windowId}">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="channel-list">
                 <ul>
@@ -60,26 +62,14 @@
                                 <i class="fas fa-hashtag"></i>
                                 <span th:text="${channel.channelName}">Channel Name</span>
                             </a>
-                            <div class="channel-actions" th:if="${currentUser}">
-                                <button class="edit-channel-btn-small" 
-                                        th:data-channel-id="${channel.channelId}"
-                                        th:data-channel-name="${channel.channelName}"
-                                        onclick="showEditChannelModalFromData(this)">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <form th:action="@{/channel/{id}/delete(id=${channel.channelId}, windowId=${windowId})}" 
-                                      method="post" 
-                                      class="delete-channel-form"
-                                      onsubmit="return confirm('Are you sure you want to delete this channel?');">
-                                    <button type="submit" class="delete-channel-btn-small">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
                         </div>
                     </li>
                 </ul>
             </div>
+            <div class="resize-handle"></div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
         </div>
 
         <!-- Edit Channel Modal -->
@@ -87,10 +77,26 @@
             <div class="modal-content">
                 <span class="close" onclick="closeEditChannelModal()">&times;</span>
                 <h2>Edit Channel</h2>
-                <form id="editChannelForm" th:action="@{/channel/{id}/edit(id=${currentChannel.channelId}, windowId=${windowId})}" method="post">
-                    <input type="hidden" id="channelId" name="channelId">
-                    <label for="newChannelName">Channel Name:</label>
-                    <input type="text" id="newChannelName" name="newChannelName" required>
+                <form id="editChannelForm" 
+                      th:action="@{/channel/{id}/edit(id=${currentChannel.channelId}, windowId=${windowId})}" 
+                      method="post" 
+                      th:object="${channel}"
+                      onsubmit="return handleEditChannelSubmit(event)">
+                    <input type="hidden" id="channelId" name="channelId" th:value="${currentChannel.channelId}">
+                    <div class="form-group">
+                        <label for="channelName">Channel Name:</label>
+                        <input type="text" 
+                               id="channelName" 
+                               name="channelName" 
+                               th:field="*{channelName}"
+                               th:value="${currentChannel.channelName}"
+                               required
+                               minlength="3"
+                               maxlength="30"
+                               pattern="[a-zA-Z0-9\s_-]+"
+                               title="Channel name can only contain letters, numbers, spaces, underscores, and hyphens">
+                        <div class="error-message" th:if="${#fields.hasErrors('channelName')}" th:errors="*{channelName}"></div>
+                    </div>
                     <button type="submit" class="save-btn">Save Changes</button>
                 </form>
             </div>
@@ -99,13 +105,24 @@
         <!-- Main Chat Area -->
         <div class="chat-main">
             <div class="chat-header">
-                <h2 th:text="${currentChannel.channelName}">Channel Name</h2>
+                <div class="chat-header-info">
+                    <div class="active-users">
+                        <i class="fas fa-users"></i>
+                        <span id="activeUsersCount">0</span> active
+                    </div>
+                    <div class="last-activity">
+                        <i class="fas fa-clock"></i>
+                        <span id="lastActivityTime">Just now</span>
+                    </div>
+                </div>
+                <h2 th:data-channel-id="${currentChannel.channelId}" style="display: none;">Channel Name</h2>
             </div>
             
             <div class="messages-container" id="messages">
                 <!-- Messages will be dynamically added here -->
                 <div th:each="message : ${messages}" 
-                     th:class="${message.user.username == currentUser.username ? 'message-sent' : 'message-received'}">
+                     th:class="${message.user.username == currentUser.username ? 'message-sent' : 'message-received'}"
+                     th:data-message-id="${message.messageId}">
                     <div class="message-bubble">
                         <div class="message-header">
                             <div class="user-avatar">
@@ -119,148 +136,39 @@
                 </div>
             </div>
 
+            <!-- Add this right after the messages-container div -->
+            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                <div class="typing-bubble">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="typing-username"></span>
+                </div>
+            </div>
+
             <!-- Message Input Area -->
             <div class="message-input-container">
-                <form th:action="@{/channel/{id}/send(id=${currentChannel.channelId}, windowId=${windowId})}" 
-                      method="post" 
-                      class="message-form">
-                    <input type="text" name="content" placeholder="Type your message..." required>
-                    <button type="submit">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+                <form id="messageForm" 
+                      onsubmit="return handleMessageSubmit(event)">
+                    <div class="cloud-input-wrapper">
+                        <input type="text" 
+                               id="messageContent" 
+                               name="content" 
+                               placeholder="Type your message..."
+                               required
+                               minlength="1"
+                               maxlength="1000">
+                        <div class="cloud-input-decoration"></div>
+                        <button type="submit" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-
-    <script>
-        function showEditChannelModalFromData(button) {
-            const channelId = button.getAttribute('data-channel-id');
-            const channelName = button.getAttribute('data-channel-name');
-            showEditChannelModal(channelId, channelName);
-        }
-
-        function showEditChannelModal(channelId, channelName) {
-            const modal = document.getElementById('editChannelModal');
-            const form = document.getElementById('editChannelForm');
-            const nameInput = document.getElementById('newChannelName');
-            
-            if (channelId && channelName) {
-                // Update form action for specific channel
-                form.action = `/channel/${channelId}/edit?windowId=${windowId}`;
-                nameInput.value = channelName;
-            } else {
-                // Use current channel
-                nameInput.value = document.querySelector('.page-header h1').textContent;
-            }
-            
-            modal.style.display = 'block';
-        }
-
-        // Update the form submission to use AJAX
-        document.getElementById('editChannelForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const form = this;
-            const formData = new FormData(form);
-            const channelId = form.action.split('/channel/')[1].split('/edit')[0];
-            
-            fetch(form.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.text();
-            })
-            .then(() => {
-                // Update all instances of the channel name in the UI
-                const newName = formData.get('newChannelName');
-                const channelElements = document.querySelectorAll(`[data-channel-id="${channelId}"]`);
-                
-                // Update channel name in header
-                document.querySelector('.page-header h1').textContent = newName;
-                document.querySelector('.chat-header h2').textContent = newName;
-                
-                // Update channel name in sidebar
-                channelElements.forEach(element => {
-                    const nameSpan = element.querySelector('span');
-                    if (nameSpan) {
-                        nameSpan.textContent = newName;
-                    }
-                    // Update the data attribute for future edits
-                    element.setAttribute('data-channel-name', newName);
-                });
-                
-                // Close the modal
-                closeEditChannelModal();
-                
-                // Show success message
-                const successMessage = document.createElement('div');
-                successMessage.className = 'success-message';
-                successMessage.textContent = 'Channel name updated successfully';
-                document.body.appendChild(successMessage);
-                
-                // Remove success message after 3 seconds
-                setTimeout(() => {
-                    successMessage.remove();
-                }, 3000);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Show error message
-                const errorMessage = document.createElement('div');
-                errorMessage.className = 'error-message';
-                errorMessage.textContent = 'Failed to update channel name';
-                document.body.appendChild(errorMessage);
-                
-                // Remove error message after 3 seconds
-                setTimeout(() => {
-                    errorMessage.remove();
-                }, 3000);
-            });
-        });
-
-        function closeEditChannelModal() {
-            const modal = document.getElementById('editChannelModal');
-            modal.style.display = 'none';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('editChannelModal');
-            if (event.target == modal) {
-                modal.style.display = 'none';
-            }
-        }
-
-        // Dark mode functionality
-        function toggleDarkMode() {
-            const body = document.body;
-            const isDarkMode = body.classList.toggle('dark-mode');
-            const themeToggleText = document.getElementById('themeToggleText');
-            const themeIcon = document.querySelector('.fa-moon');
-            
-            // Update button text and icon
-            themeToggleText.textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
-            themeIcon.className = isDarkMode ? 'fas fa-sun' : 'fas fa-moon';
-            
-            // Save preference to localStorage
-            localStorage.setItem('darkMode', isDarkMode);
-        }
-
-        // Check for saved theme preference
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-            if (savedDarkMode) {
-                document.body.classList.add('dark-mode');
-                document.getElementById('themeToggleText').textContent = 'Light Mode';
-                document.querySelector('.fa-moon').className = 'fas fa-sun';
-            }
-        });
-    </script>
 
     <style>
         .success-message, .error-message {
@@ -295,6 +203,413 @@
                 opacity: 1;
             }
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+        }
+
+        .modal-content {
+            position: relative;
+            background: var(--modal-bg);
+            margin: 15% auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .modal input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1em;
+            background: var(--input-bg);
+            color: var(--input-text);
+        }
+
+        .modal input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Cloud Input Styles */
+        .cloud-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 30px;
+            padding: 5px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .cloud-input-wrapper:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .cloud-input-wrapper:focus-within {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .cloud-input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px 20px;
+            color: var(--text-color);
+            font-size: 1em;
+            width: 100%;
+        }
+
+        .cloud-input-wrapper input:focus {
+            outline: none;
+        }
+
+        .cloud-input-wrapper input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .cloud-input-decoration {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, 
+                rgba(255, 255, 255, 0.1) 0%,
+                transparent 70%);
+            pointer-events: none;
+            border-radius: 30px;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Dark mode adjustments */
+        .dark-mode .cloud-input-wrapper {
+            background: rgba(45, 55, 72, 0.8);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-mode .cloud-input-wrapper:hover {
+            background: rgba(45, 55, 72, 0.9);
+        }
+
+        .dark-mode .cloud-input-wrapper:focus-within {
+            background: rgba(45, 55, 72, 0.95);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .dark-mode .send-btn {
+            background: linear-gradient(135deg, #2b6cb0, #1a365d);
+        }
+
+        .dark-mode .send-btn:hover {
+            background: linear-gradient(135deg, #1a365d, #2b6cb0);
+        }
+
+        /* Typing Indicator Styles */
+        .typing-indicator {
+            padding: 10px 20px;
+            margin: 5px 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .typing-indicator[style*="display: block"] {
+            opacity: 1;
+        }
+
+        .typing-bubble {
+            display: inline-flex;
+            align-items: center;
+            background: var(--message-received-bg);
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: var(--message-received-text);
+            font-size: 0.9em;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .typing-dots {
+            display: flex;
+            align-items: center;
+            margin-right: 8px;
+        }
+
+        .typing-dots span {
+            width: 4px;
+            height: 4px;
+            margin: 0 2px;
+            background-color: currentColor;
+            border-radius: 50%;
+            opacity: 0.4;
+            animation: typingAnimation 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .typing-username {
+            font-style: italic;
+        }
+
+        @keyframes typingAnimation {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(-4px);
+                opacity: 0.8;
+            }
+        }
+
+        /* Dark mode adjustments */
+        .dark-mode .typing-bubble {
+            background: var(--message-received-bg);
+            color: var(--message-received-text);
+        }
+
+        .chat-header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: var(--text-color);
+            font-size: 0.9em;
+        }
+
+        .active-users, .last-activity {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
+        }
+
+        .active-users:hover, .last-activity:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .active-users i, .last-activity i {
+            font-size: 1.1em;
+            color: var(--text-color);
+            opacity: 0.9;
+        }
+
+        #activeUsersCount {
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        #lastActivityTime {
+            font-weight: 500;
+        }
+
+        /* Dark mode adjustments */
+        .dark-mode .active-users, .dark-mode .last-activity {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dark-mode .active-users:hover, .dark-mode .last-activity:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-mode #activeUsersCount {
+            color: #48bb78;
+        }
     </style>
+
+    <!-- Add this before the closing body tag -->
+    <script>
+    let isResizing = false;
+    let startX;
+    let startWidth;
+    let sidebar;
+    let resizeHandle;
+    let isCollapsed = false;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        sidebar = document.querySelector('.channel-sidebar');
+        resizeHandle = document.querySelector('.resize-handle');
+        
+        // Initialize resize handle
+        resizeHandle.addEventListener('mousedown', initResize);
+        document.addEventListener('mousemove', resize);
+        document.addEventListener('mouseup', stopResize);
+        
+        // Load sidebar state from localStorage
+        const savedState = localStorage.getItem('sidebarState');
+        if (savedState === 'collapsed') {
+            toggleSidebar();
+        }
+    });
+
+    function initResize(e) {
+        if (isCollapsed) return; // Don't allow resize when collapsed
+        
+        isResizing = true;
+        startX = e.pageX;
+        startWidth = parseInt(getComputedStyle(sidebar).width, 10);
+        resizeHandle.classList.add('active');
+        
+        // Prevent text selection during resize
+        e.preventDefault();
+    }
+
+    function resize(e) {
+        if (!isResizing) return;
+        
+        const width = startWidth + (e.pageX - startX);
+        if (width >= 200 && width <= 400) { // Respect min/max width
+            sidebar.style.width = width + 'px';
+            
+            // Update other elements
+            document.querySelector('.chat-main').style.marginLeft = width + 'px';
+            document.querySelector('.chat-main').style.width = `calc(100% - ${width}px)`;
+            document.querySelector('.page-header').style.left = width + 'px';
+            document.querySelector('.user-bubble-container').style.left = width + 'px';
+            document.querySelector('.message-input-container').style.left = width + 'px';
+            document.querySelector('.message-input-container').style.width = `calc(100% - ${width + 20}px)`;
+        }
+    }
+
+    function stopResize() {
+        if (!isResizing) return;
+        
+        isResizing = false;
+        resizeHandle.classList.remove('active');
+        
+        // Save the width to localStorage
+        localStorage.setItem('sidebarWidth', sidebar.style.width);
+    }
+
+    function toggleSidebar() {
+        isCollapsed = !isCollapsed;
+        sidebar.classList.toggle('collapsed');
+        
+        // Save state to localStorage
+        localStorage.setItem('sidebarState', isCollapsed ? 'collapsed' : 'expanded');
+        
+        // Update toggle button icon
+        const toggleIcon = document.querySelector('.sidebar-toggle i');
+        toggleIcon.style.transform = isCollapsed ? 'rotate(180deg)' : '';
+        
+        // Get the user bubble elements
+        const userBubble = document.querySelector('.user-bubble');
+        const userBubbleSpan = userBubble?.querySelector('span');
+        const userBubbleIcon = userBubble?.querySelector('i');
+        
+        if (isCollapsed) {
+            // Store the original width before collapsing
+            const originalWidth = sidebar.style.width || '280px';
+            localStorage.setItem('sidebarWidth', originalWidth);
+            
+            // Update layout for collapsed state
+            sidebar.style.width = '60px';
+            document.querySelector('.chat-main').style.marginLeft = '60px';
+            document.querySelector('.chat-main').style.width = 'calc(100% - 60px)';
+            document.querySelector('.page-header').style.left = '60px';
+            document.querySelector('.message-input-container').style.left = '60px';
+            document.querySelector('.message-input-container').style.width = 'calc(100% - 80px)';
+            
+            // Hide username text but keep icon
+            if (userBubbleSpan) userBubbleSpan.style.display = 'none';
+            if (userBubble) {
+                userBubble.style.width = '40px';
+                userBubble.style.height = '40px';
+                userBubble.style.padding = '0';
+                userBubble.style.justifyContent = 'center';
+                userBubble.style.borderRadius = '50%';
+            }
+        } else {
+            // Restore the last width or use default
+            const savedWidth = localStorage.getItem('sidebarWidth') || '280px';
+            sidebar.style.width = savedWidth;
+            document.querySelector('.chat-main').style.marginLeft = savedWidth;
+            document.querySelector('.chat-main').style.width = `calc(100% - ${savedWidth})`;
+            document.querySelector('.page-header').style.left = savedWidth;
+            document.querySelector('.message-input-container').style.left = savedWidth;
+            document.querySelector('.message-input-container').style.width = `calc(100% - ${parseInt(savedWidth) + 20}px)`;
+            
+            // Restore user bubble to normal state
+            if (userBubbleSpan) userBubbleSpan.style.display = '';
+            if (userBubble) {
+                userBubble.style.width = '';
+                userBubble.style.height = '';
+                userBubble.style.padding = '';
+                userBubble.style.justifyContent = '';
+                userBubble.style.borderRadius = '';
+            }
+        }
+    }
+    </script>
 </body>
 </html>

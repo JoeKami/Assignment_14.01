@@ -1,0 +1,131 @@
+:root {
+    --bg-color: transparent;
+    --container-bg: rgba(255, 255, 255, 0.1);
+    --text-color: #ffffff;
+    --border-color: rgba(255, 255, 255, 0.2);
+    --hover-bg: rgba(255, 255, 255, 0.2);
+    --cloud-color: #ffffff;
+    --cloud-shadow: rgba(0, 0, 0, 0.1);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-image: url('/images/cloudserror.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+}
+
+.error-container {
+    background: var(--container-bg);
+    backdrop-filter: blur(8px);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+    border: 1px solid var(--border-color);
+}
+
+.error-icon {
+    font-size: 4em;
+    color: var(--cloud-color);
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px var(--cloud-shadow);
+}
+
+h1 {
+    font-size: 2em;
+    margin-bottom: 15px;
+    color: var(--text-color);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    color: var(--text-color);
+    opacity: 0.9;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.cloud-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--cloud-color);
+    color: #4a90e2;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1em;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px var(--cloud-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.cloud-button::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.cloud-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--cloud-shadow);
+}
+
+.cloud-button:hover::before {
+    opacity: 0.3;
+}
+
+.cloud-button i {
+    font-size: 1.2em;
+    color: #4a90e2;
+}
+
+.cloud-button span {
+    position: relative;
+    z-index: 1;
+}
+
+@media screen and (max-width: 600px) {
+    .error-container {
+        padding: 30px 20px;
+    }
+
+    .error-icon {
+        font-size: 3em;
+    }
+
+    h1 {
+        font-size: 1.6em;
+    }
+
+    p {
+        font-size: 1em;
+    }
+
+    .cloud-button {
+        padding: 12px 25px;
+        font-size: 1em;
+    }
+} 

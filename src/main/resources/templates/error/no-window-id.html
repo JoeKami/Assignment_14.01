@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invalid Session</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/error-page.css}">
+</head>
+<body>
+    <div class="error-container">
+        <i class="fas fa-cloud error-icon"></i>
+        <h1>Invalid Session</h1>
+        <p>It seems your session is invalid or has expired. This could happen if you tried to access a page directly without going through the proper login process, or if you tried to access a channel that doesn't exist.</p>
+        <a href="/" class="cloud-button">
+            <i class="fas fa-cloud"></i>
+            <span>Return to Cloudy Chat</span>
+        </a>
+    </div>
+</body>
+</html> 

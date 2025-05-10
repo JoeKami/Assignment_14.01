@@ -4,11 +4,25 @@
     <meta charset="UTF-8">
     <title>Welcome</title>
     <link rel="stylesheet" th:href="@{/css/welcome.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script th:src="@{/js/theme.js}" defer></script>
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <button id="themeToggle" class="theme-toggle" onclick="toggleDarkMode()">
+        <i class="fas fa-moon"></i>
+    </button>
+
     <!-- Error Message Display -->
-    <div th:if="${error}" class="error-message">
+    <div th:if="${error}" class="error-message" id="errorMessage">
+        <i class="fas fa-exclamation-circle"></i>
         <p th:text="${error}">Error message</p>
+    </div>
+
+    <!-- Success Message Display -->
+    <div th:if="${success}" class="success-message" id="successMessage">
+        <i class="fas fa-check-circle"></i>
+        <p th:text="${success}">Success message</p>
     </div>
 
     <div class="bubble-container" th:if="${username}">
@@ -16,7 +30,8 @@
             <p th:text="${username} + ' is signed in!'"></p>
         </div>
 
-        <form th:action="@{/logout(windowId=${windowId})}" method="get" class="logout-form">
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <input type="hidden" name="windowId" th:value="${windowId}">
             <button type="submit">Logout</button>
         </form>
     </div>
@@ -35,7 +50,7 @@
         </div>
 
         <div class="box">
-            <h2>Channels</h2>
+            <h2>Select A Channel
             <ul>
                 <li th:each="channel : ${channels}">
                     <a th:href="@{/channel/{id}(id=${channel.channelId}, windowId=${windowId})}" th:text="${channel.channelName}">Channel</a>
@@ -53,5 +68,55 @@
             </form>
         </div>
     </div>
+
+    <script>
+        // Dark mode functionality
+        function toggleDarkMode() {
+            const body = document.body;
+            const isDarkMode = body.classList.toggle('dark-mode');
+            const themeIcon = document.querySelector('.theme-toggle i');
+            
+            // Update icon
+            themeIcon.className = isDarkMode ? 'fas fa-sun' : 'fas fa-moon';
+            
+            // Save preference to localStorage
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+
+        // Check for saved theme preference
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (savedDarkMode) {
+                document.body.classList.add('dark-mode');
+                document.querySelector('.theme-toggle i').className = 'fas fa-sun';
+            }
+
+            // Handle notification messages
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            const NOTIFICATION_TIMEOUT = 3000; // 3 seconds
+
+            if (errorMessage) {
+                setTimeout(() => {
+                    errorMessage.style.opacity = '0';
+                    setTimeout(() => errorMessage.remove(), 300); // Remove after fade out
+                }, NOTIFICATION_TIMEOUT);
+            }
+
+            if (successMessage) {
+                setTimeout(() => {
+                    successMessage.style.opacity = '0';
+                    setTimeout(() => successMessage.remove(), 300); // Remove after fade out
+                }, NOTIFICATION_TIMEOUT);
+            }
+        });
+    </script>
+
+    <style>
+        /* Add transition for notification messages */
+        .error-message, .success-message {
+            transition: opacity 0.3s ease-out;
+        }
+    </style>
 </body>
 </html>

@@ -1,6 +1,8 @@
 package com.coderscampus.PollyChat.assignment142.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -10,18 +12,21 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long messageId;
 
+    @NotNull(message = "User is required")
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
+    @NotNull(message = "Channel is required")
     @ManyToOne
     @JoinColumn(name = "channel_id")
     private Channel channel;
 
-    @NotNull
+    @NotBlank(message = "Message content cannot be empty")
+    @Size(min = 1, max = 1000, message = "Message must be between 1 and 1000 characters")
     private String content;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private LocalDateTime timestamp;
 
     @PrePersist
@@ -29,6 +34,14 @@ public class Message {
         if (timestamp == null) {
             timestamp = LocalDateTime.now();
         }
+    }
+
+    public Long getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(Long messageId) {
+        this.messageId = messageId;
     }
 
     public User getUser() {
