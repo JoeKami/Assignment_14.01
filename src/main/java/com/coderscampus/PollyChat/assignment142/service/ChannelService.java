@@ -34,8 +34,17 @@ public class ChannelService {
         return channelRepository.save(channel);
     }
 
-    public void deleteChannel(Long channelId) {
-        channelRepository.deleteById(channelId);
+    public void deleteChannel(Long channelId) throws ChangeSetPersister.NotFoundException {
+        Channel channel = getChannelByChannelId(channelId);
+        if (channel != null) {
+            // First delete all messages in the channel
+            List<Message> messages = messageRepository.findByChannelOrderByMessageIdAsc(channel);
+            messageRepository.deleteAll(messages);
+            // Then delete the channel
+            channelRepository.delete(channel);
+        } else {
+            throw new ChangeSetPersister.NotFoundException();
+        }
     }
 
     public List<Message> getMessagesForChannel(Long channelId) throws ChangeSetPersister.NotFoundException {

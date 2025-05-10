@@ -1,6 +1,6 @@
 let isUserTyping = false;
 let refreshTimeout;
-const REFRESH_INTERVAL = 4000; // 4 seconds
+const REFRESH_INTERVAL = 2000; // 2 seconds
 
 // Auto-scroll to bottom of messages
 function scrollToBottom() {
@@ -60,4 +60,22 @@ window.addEventListener('beforeunload', function() {
 });
 
 // Initialize chat when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeChat); 
+document.addEventListener('DOMContentLoaded', initializeChat);
+
+// Dropdown functionality
+function toggleDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    const bubble = document.querySelector('.user-bubble');
+    dropdown.classList.toggle('show');
+    bubble.classList.toggle('active');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('userDropdown');
+    const bubble = document.querySelector('.user-bubble');
+    if (!bubble?.contains(event.target) && !dropdown?.contains(event.target)) {
+        dropdown?.classList.remove('show');
+        bubble?.classList.remove('active');
+    }
+}); 

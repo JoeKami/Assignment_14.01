@@ -1,5 +1,6 @@
 package com.coderscampus.PollyChat.assignment142.web;
 
+import com.coderscampus.PollyChat.assignment142.domain.Channel;
 import com.coderscampus.PollyChat.assignment142.domain.Message;
 import com.coderscampus.PollyChat.assignment142.domain.User;
 import com.coderscampus.PollyChat.assignment142.service.ChannelService;
@@ -126,16 +127,75 @@ public class ChannelController {
     @PostMapping("/channel/{channelId}/delete")
     public String deleteChannel(@PathVariable Long channelId,
                               @RequestParam String windowId,
+                              HttpSession session,
                               RedirectAttributes redirectAttributes) {
         try {
             logger.debug("Attempting to delete channel {} from windowId: {}", channelId, windowId);
+            
+            // Verify user is logged in
+            String username = (String) session.getAttribute("username_" + windowId);
+            if (username == null) {
+                logger.error("No user logged in for windowId: {}", windowId);
+                redirectAttributes.addFlashAttribute("error", "Please sign in to delete channels");
+                return "redirect:/welcome?windowId=" + windowId;
+            }
+
+            // Delete the channel and its messages
             channelService.deleteChannel(channelId);
-            logger.debug("Channel {} deleted successfully", channelId);
+            logger.debug("Channel {} and its messages deleted successfully", channelId);
+            
+            redirectAttributes.addFlashAttribute("success", "Channel deleted successfully");
+            return "redirect:/welcome?windowId=" + windowId;
+        } catch (ChangeSetPersister.NotFoundException e) {
+            logger.error("Channel not found with ID: {}", channelId);
+            redirectAttributes.addFlashAttribute("error", "Channel not found");
             return "redirect:/welcome?windowId=" + windowId;
         } catch (Exception e) {
             logger.error("Error deleting channel {}: {}", channelId, e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("error", "Failed to delete channel");
+            redirectAttributes.addFlashAttribute("error", "Failed to delete channel: " + e.getMessage());
             return "redirect:/welcome?windowId=" + windowId;
+        }
+    }
+
+    @PostMapping("/channel/{channelId}/edit")
+    public String editChannel(@PathVariable Long channelId,
+                            @RequestParam String windowId,
+                            @RequestParam String newChannelName,
+                            HttpSession session,
+                            RedirectAttributes redirectAttributes) {
+        try {
+            logger.debug("Attempting to edit channel {} from windowId: {}", channelId, windowId);
+            
+            // Verify user is logged in
+            String username = (String) session.getAttribute("username_" + windowId);
+            if (username == null) {
+                logger.error("No user logged in for windowId: {}", windowId);
+                redirectAttributes.addFlashAttribute("error", "Please sign in to edit channels");
+                return "redirect:/welcome?windowId=" + windowId;
+            }
+
+            // Validate channel name
+            if (newChannelName == null || newChannelName.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Channel name cannot be empty");
+                return "redirect:/channel/" + channelId + "?windowId=" + windowId;
+            }
+
+            // Get and update the channel
+            Channel channel = channelService.getChannelByChannelId(channelId);
+            channel.setChannelName(newChannelName.trim());
+            channelService.createChannel(channel);
+            
+            logger.debug("Channel {} edited successfully", channelId);
+            redirectAttributes.addFlashAttribute("success", "Channel name updated successfully");
+            return "redirect:/channel/" + channelId + "?windowId=" + windowId;
+        } catch (ChangeSetPersister.NotFoundException e) {
+            logger.error("Channel not found with ID: {}", channelId);
+            redirectAttributes.addFlashAttribute("error", "Channel not found");
+            return "redirect:/welcome?windowId=" + windowId;
+        } catch (Exception e) {
+            logger.error("Error editing channel {}: {}", channelId, e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Failed to edit channel: " + e.getMessage());
+            return "redirect:/channel/" + channelId + "?windowId=" + windowId;
         }
     }
 }

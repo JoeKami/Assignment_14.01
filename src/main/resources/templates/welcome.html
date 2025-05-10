@@ -43,7 +43,7 @@
             </ul>
         </div>
 
-        <div class="box">
+        <div class="box" th:if="${username}">
             <h2>Want To Create A New Channel?</h2>
             <form th:action="@{/create-channel(windowId=${windowId})}" th:object="${channel}" method="post">
                 <label for="channelName">Name That Channel:</label>
