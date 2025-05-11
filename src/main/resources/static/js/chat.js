@@ -73,10 +73,33 @@ function updateActiveUsersCount(count) {
 
 // Initialize chat functionality
 function initializeChat() {
-    // Get windowId from URL
-    currentWindowId = new URLSearchParams(window.location.search).get('windowId');
-    if (!currentWindowId) {
-        console.error('No windowId found in URL');
+    // Get windowId and channelId from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    currentWindowId = urlParams.get('windowId');
+    
+    // Check if channel ID exists in the URL path
+    const pathParts = window.location.pathname.split('/');
+    const channelIdFromPath = pathParts[pathParts.indexOf('channel') + 1];
+    
+    if (!channelIdFromPath) {
+        console.error('Channel ID missing from URL path');
+        window.location.href = '/error/no-window-id';
+        return;
+    }
+    
+    const channelId = document.querySelector('.chat-header h2')?.getAttribute('data-channel-id');
+    
+    // Validate both windowId and channelId
+    if (!currentWindowId || !channelId) {
+        console.error('Missing windowId or channelId in URL');
+        window.location.href = '/error/no-window-id';
+        return;
+    }
+    
+    // Validate channelId is a number and matches the URL path
+    if (isNaN(parseInt(channelId)) || channelId !== channelIdFromPath) {
+        console.error('Invalid channelId format or mismatch with URL');
+        window.location.href = '/error/no-window-id';
         return;
     }
 
@@ -142,6 +165,12 @@ function setupEventSource() {
     eventSource.onerror = (error) => {
         console.error('SSE connection error:', error);
         eventSource.close();
+        
+        // Check if the error is due to authentication or not found
+        if (error.status === 401 || error.status === 403 || error.status === 404) {
+            window.location.href = '/error/no-window-id';
+            return;
+        }
         
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
             reconnectAttempts++;
@@ -258,6 +287,11 @@ async function handleMessageSubmit(event) {
             body: JSON.stringify({ content: content })
         });
         
+        if (response.status === 401 || response.status === 403 || response.status === 404) {
+            window.location.href = '/error/no-window-id';
+            return false;
+        }
+        
         console.log('Response received:', {
             status: response.status,
             statusText: response.statusText,
@@ -267,13 +301,17 @@ async function handleMessageSubmit(event) {
         const data = await response.json();
         
         if (!response.ok) {
+            if (data.error && (data.error.includes('Not authenticated') || data.error.includes('Not found'))) {
+                window.location.href = '/error/no-window-id';
+                return false;
+            }
             throw new Error(data.error || `Server error: ${response.status} ${response.statusText}`);
         }
         
         if (data.success) {
             console.log('Message sent successfully');
             messageInput.value = '';
-            lastActivityTime = new Date(); // Update last activity time
+            lastActivityTime = new Date();
             updateLastActivityTime();
             await refreshMessages();
             messageInput.focus();
@@ -286,6 +324,10 @@ async function handleMessageSubmit(event) {
             stack: error.stack,
             name: error.name
         });
+        if (error.message && error.message.includes('Not authenticated')) {
+            window.location.href = '/error/no-window-id';
+            return false;
+        }
         showNotification(error.message || 'Failed to send message. Please try again.', 'error');
     } finally {
         isSubmitting = false;
@@ -313,7 +355,17 @@ async function refreshMessages() {
     try {
         const response = await fetch(`/channel/${channelId}/messages?windowId=${windowId}`);
         
+        if (response.status === 401 || response.status === 403 || response.status === 404) {
+            window.location.href = '/error/no-window-id';
+            return;
+        }
+        
         if (!response.ok) {
+            const data = await response.json();
+            if (data.error && (data.error.includes('Not authenticated') || data.error.includes('Not found'))) {
+                window.location.href = '/error/no-window-id';
+                return;
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
@@ -498,4 +550,88 @@ document.addEventListener('click', function(event) {
         dropdown?.classList.remove('show');
         bubble?.classList.remove('active');
     }
-}); 
+});
+
+function showEditChannelModal() {
+    const modal = document.getElementById('editChannelModal');
+    if (modal) {
+        modal.style.display = 'block';
+        // Focus on the input field
+        const input = modal.querySelector('#channelName');
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    }
+}
+
+function closeEditChannelModal() {
+    const modal = document.getElementById('editChannelModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function handleEditChannelSubmit(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const channelName = form.querySelector('#channelName').value.trim();
+    
+    if (!channelName) {
+        showNotification('Channel name cannot be empty', 'error');
+        return false;
+    }
+    
+    if (channelName.length < 3 || channelName.length > 30) {
+        showNotification('Channel name must be between 3 and 30 characters', 'error');
+        return false;
+    }
+    
+    if (!/^[a-zA-Z0-9\s_-]+$/.test(channelName)) {
+        showNotification('Channel name can only contain letters, numbers, spaces, underscores, and hyphens', 'error');
+        return false;
+    }
+    
+    try {
+        const formData = new FormData(form);
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.status === 401 || response.status === 403 || response.status === 404) {
+            // Handle authentication and not found errors
+            window.location.href = '/error/no-window-id';
+            return false;
+        }
+        
+        if (!response.ok) {
+            const data = await response.json();
+            if (data.error && (data.error.includes('Not authenticated') || data.error.includes('Not found'))) {
+                window.location.href = '/error/no-window-id';
+                return false;
+            }
+            throw new Error(data.error || `Server error: ${response.status} ${response.statusText}`);
+        }
+        
+        // Close the modal
+        closeEditChannelModal();
+        
+        // Show success message
+        showNotification('Channel name updated successfully', 'success');
+        
+        // Refresh the page to show updated channel name
+        window.location.reload();
+        
+    } catch (error) {
+        console.error('Error updating channel:', error);
+        if (error.message && error.message.includes('Not authenticated')) {
+            window.location.href = '/error/no-window-id';
+            return false;
+        }
+        showNotification(error.message || 'Failed to update channel name', 'error');
+    }
+    
+    return false;
+} 

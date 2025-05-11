@@ -518,4 +518,11 @@ public class ChannelController {
         
         return channelUsers.size();
     }
+
+    // Add this new mapping to catch invalid channel URLs
+    @GetMapping("/channel/**")
+    public String handleInvalidChannelUrl() {
+        logger.debug("Invalid channel URL accessed, redirecting to error page");
+        return "error/no-window-id";
+    }
 }
