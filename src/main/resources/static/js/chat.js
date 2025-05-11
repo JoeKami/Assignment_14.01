@@ -146,6 +146,7 @@ function initializeChat() {
 
 function setupEventSource() {
     if (eventSource) {
+        console.log('Closing existing SSE connection');
         eventSource.close();
     }
     
@@ -155,49 +156,175 @@ function setupEventSource() {
         return;
     }
     
-    eventSource = new EventSource(`/channel/${channelId}/events?windowId=${currentWindowId}`);
+    console.log('Setting up SSE connection for channel:', channelId, 'windowId:', currentWindowId);
+    
+    // Add timestamp to prevent caching
+    const timestamp = new Date().getTime();
+    const eventSourceUrl = `/channel/${channelId}/events?windowId=${currentWindowId}&_=${timestamp}`;
+    console.log('Connecting to SSE endpoint:', eventSourceUrl);
+    
+    eventSource = new EventSource(eventSourceUrl);
     
     eventSource.onopen = () => {
-        console.log('SSE connection established');
+        console.log('SSE connection established successfully');
         reconnectAttempts = 0;
+        // Store the last successful connection time
+        localStorage.setItem('lastSSEConnection', new Date().getTime().toString());
     };
     
-    eventSource.onerror = (error) => {
+    eventSource.onerror = async (error) => {
         console.error('SSE connection error:', error);
-        eventSource.close();
         
-        // Check if the error is due to authentication or not found
-        if (error.status === 401 || error.status === 403 || error.status === 404) {
-            window.location.href = '/error/no-window-id';
-            return;
+        // Check if we need to refresh the session
+        const lastConnection = parseInt(localStorage.getItem('lastSSEConnection') || '0');
+        const now = new Date().getTime();
+        const timeSinceLastConnection = now - lastConnection;
+        
+        if (timeSinceLastConnection > 300000) { // 5 minutes
+            console.log('Session may have expired, attempting to refresh...');
+            try {
+                // Try to refresh the session by making a request to a protected endpoint
+                const response = await fetch(`/channel/${channelId}/messages?windowId=${currentWindowId}&_=${now}`);
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Session expired, redirecting to login...');
+                    window.location.href = `/welcome?windowId=${currentWindowId}`;
+                    return;
+                }
+            } catch (refreshError) {
+                console.error('Error refreshing session:', refreshError);
+            }
         }
+        
+        eventSource.close();
         
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
             reconnectAttempts++;
-            setTimeout(setupEventSource, RECONNECT_DELAY * reconnectAttempts);
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff, max 30 seconds
+            console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) in ${delay}ms...`);
+            setTimeout(setupEventSource, delay);
         } else {
             console.error('Max reconnection attempts reached');
             showNotification('Connection lost. Please refresh the page.', 'error');
+            // Reset reconnect attempts after a longer delay
+            setTimeout(() => {
+                reconnectAttempts = 0;
+                setupEventSource();
+            }, 60000); // Try again after 1 minute
         }
     };
     
     // Handle different event types
     eventSource.addEventListener('connected', (event) => {
-        console.log('Connected to channel events');
+        console.log('Received connected event from server');
+        // Store the successful connection
+        localStorage.setItem('lastSSEConnection', new Date().getTime().toString());
     });
     
     eventSource.addEventListener('new_message', (event) => {
+        console.log('Received new_message event');
         refreshMessages();
     });
     
     eventSource.addEventListener('channel_updated', (event) => {
-        const data = JSON.parse(event.data);
-        if (data.channelId === channelId) {
-            refreshMessages();
+        console.log('Received channel_updated event:', event.data);
+        try {
+            const data = JSON.parse(event.data);
+            const currentChannelId = document.querySelector('.chat-header h2')?.getAttribute('data-channel-id');
+            console.log('Processing channel update:', {
+                receivedChannelId: data.channelId,
+                currentChannelId: currentChannelId,
+                newName: data.newName,
+                oldName: data.oldName
+            });
+
+            // Function to update channel name in an element
+            const updateChannelName = (element) => {
+                if (element && element.textContent !== data.newName) {
+                    console.log('Updating element text from:', element.textContent, 'to:', data.newName);
+                    element.textContent = data.newName;
+                }
+            };
+
+            // Update all instances of the channel name in the UI
+            const updateSelectors = [
+                // Channel list items
+                `.channel-list a[href*="/channel/${data.channelId}"] span`,
+                `.channel-list a[href*="/channel/${data.channelId}"]`,
+                // Channel items
+                `.channel-item a[href*="/channel/${data.channelId}"] span`,
+                `.channel-item a[href*="/channel/${data.channelId}"]`,
+                // Header elements
+                `.page-header h1`,
+                `.chat-header h2`,
+                // Any other elements that might contain the channel name
+                `[data-channel-id="${data.channelId}"]`
+            ];
+
+            let updatedElements = 0;
+            updateSelectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                console.log(`Found ${elements.length} elements matching selector: ${selector}`);
+                elements.forEach(element => {
+                    if (element.tagName === 'A') {
+                        // For links, update both the link text and any span inside
+                        const span = element.querySelector('span');
+                        if (span) {
+                            updateChannelName(span);
+                            updatedElements++;
+                        }
+                        // Also update the link's text content if it contains the channel name
+                        if (element.textContent.includes(data.oldName)) {
+                            element.textContent = element.textContent.replace(data.oldName, data.newName);
+                            updatedElements++;
+                        }
+                    } else {
+                        // For other elements, update directly
+                        updateChannelName(element);
+                        updatedElements++;
+                    }
+                });
+            });
+
+            console.log(`Updated ${updatedElements} elements with new channel name`);
+
+            // If this is the current channel, update additional elements
+            if (data.channelId === currentChannelId) {
+                console.log('Updating current channel display');
+                // Update page title
+                document.title = `${data.newName} - Chat Channel`;
+
+                // Show notification with who made the change
+                const updatedBy = data.updatedBy || 'someone';
+                showNotification(`${updatedBy} renamed the channel to "${data.newName}"`, 'success');
+            } else {
+                console.log('Updating channel list for non-current channel');
+                // For users in other channels, show a subtle notification
+                const updatedBy = data.updatedBy || 'someone';
+                showNotification(`${updatedBy} renamed channel "${data.oldName}" to "${data.newName}"`, 'info');
+            }
+
+            // Force a refresh of the channel list if needed
+            if (data.updateChannelList) {
+                console.log('Refreshing channel list');
+                refreshChannelList();
+            }
+
+            // Update any active channel links
+            const activeLinks = document.querySelectorAll(`a[href*="/channel/${data.channelId}"].active`);
+            activeLinks.forEach(link => {
+                const span = link.querySelector('span');
+                if (span) {
+                    updateChannelName(span);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error handling channel update:', error, 'Event data:', event.data);
         }
     });
     
     eventSource.addEventListener('channel_deleted', (event) => {
+        console.log('Received channel_deleted event:', event.data);
         const data = JSON.parse(event.data);
         if (data.channelId === channelId) {
             showNotification('This channel has been deleted', 'error');
@@ -211,12 +338,16 @@ function setupEventSource() {
 function handleVisibilityChange() {
     if (document.hidden) {
         if (eventSource) {
+            console.log('Page hidden, closing SSE connection');
             eventSource.close();
             eventSource = null;
         }
     } else {
-        setupEventSource();
-        refreshMessages();
+        console.log('Page visible, checking session and reconnecting SSE');
+        checkSessionStatus().then(() => {
+            setupEventSource();
+            refreshMessages();
+        });
     }
 }
 
@@ -513,26 +644,38 @@ function notifyTypingStatus(isTyping) {
     }).catch(error => console.error('Error updating typing status:', error));
 }
 
-function showNotification(message, type) {
+function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `${type}-message`;
+    
+    // Add different styles for info notifications
+    if (type === 'info') {
+        notification.style.backgroundColor = '#4299e1';
+        notification.style.boxShadow = '0 4px 15px rgba(66, 153, 225, 0.3)';
+    }
+    
     notification.textContent = message;
     document.body.appendChild(notification);
     
+    // Remove the notification after 5 seconds for info messages, 3 seconds for others
     setTimeout(() => {
         notification.remove();
-    }, 3000);
+    }, type === 'info' ? 5000 : 3000);
 }
 
 // Clean up event source when leaving the page
 window.addEventListener('beforeunload', () => {
+    console.log('Page unloading, cleaning up SSE connection');
     if (eventSource) {
         eventSource.close();
     }
 });
 
 // Initialize chat when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeChat);
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing chat...');
+    initializeChat();
+});
 
 // Dropdown functionality
 function toggleDropdown() {
@@ -634,4 +777,80 @@ async function handleEditChannelSubmit(event) {
     }
     
     return false;
-} 
+}
+
+// Add a function to check session status
+async function checkSessionStatus() {
+    try {
+        const channelId = document.querySelector('.chat-header h2')?.getAttribute('data-channel-id');
+        if (!channelId || !currentWindowId) return;
+        
+        const response = await fetch(`/channel/${channelId}/messages?windowId=${currentWindowId}&_=${new Date().getTime()}`);
+        if (response.status === 401 || response.status === 403) {
+            console.log('Session expired, redirecting to login...');
+            window.location.href = `/welcome?windowId=${currentWindowId}`;
+        }
+    } catch (error) {
+        console.error('Error checking session status:', error);
+    }
+}
+
+// Check session status periodically
+setInterval(checkSessionStatus, 300000); // Check every 5 minutes
+
+// Modify the ensureEventSourceConnection function
+function ensureEventSourceConnection() {
+    if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+        console.log('EventSource connection lost, checking session before reconnecting...');
+        checkSessionStatus().then(() => {
+            if (document.visibilityState === 'visible') {
+                setupEventSource();
+            }
+        });
+    }
+}
+
+// Add a function to refresh the channel list from the server
+async function refreshChannelList() {
+    try {
+        if (!currentWindowId) {
+            console.log('No windowId available for channel list refresh');
+            return;
+        }
+
+        const response = await fetch(`/channels?windowId=${currentWindowId}&_=${new Date().getTime()}`);
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                console.log('Session expired during channel list refresh');
+                window.location.href = `/welcome?windowId=${currentWindowId}`;
+                return;
+            }
+            console.error('Failed to fetch channel list:', response.status);
+            return;
+        }
+
+        const channels = await response.json();
+        console.log('Received channel list update:', channels);
+
+        // Update the channel list in the sidebar
+        const channelList = document.querySelector('.channel-list ul');
+        if (channelList) {
+            channels.forEach(channel => {
+                // Find existing channel link
+                const existingLink = channelList.querySelector(`a[href*="/channel/${channel.channelId}"]`);
+                if (existingLink) {
+                    const span = existingLink.querySelector('span');
+                    if (span && span.textContent !== channel.channelName) {
+                        console.log(`Updating channel name from "${span.textContent}" to "${channel.channelName}"`);
+                        span.textContent = channel.channelName;
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error refreshing channel list:', error);
+    }
+}
+
+// Call refreshChannelList periodically to ensure channel list is up to date
+setInterval(refreshChannelList, 30000); // Refresh every 30 seconds 

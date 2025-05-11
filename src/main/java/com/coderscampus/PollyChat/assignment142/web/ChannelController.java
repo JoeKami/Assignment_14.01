@@ -224,13 +224,60 @@ public class ChannelController {
 
             // Get and update the channel
             Channel existingChannel = channelService.getChannelByChannelId(channelId);
-            existingChannel.setChannelName(channel.getChannelName().trim());
+            String oldName = existingChannel.getChannelName();
+            String newName = channel.getChannelName().trim();
+            existingChannel.setChannelName(newName);
             channelService.createChannel(existingChannel);
             
-            // Notify clients of the channel update
-            notifyChannelUpdate(channelId, "channel_updated");
+            logger.info("Channel {} renamed from '{}' to '{}' by user {}", 
+                channelId, oldName, newName, username);
             
-            logger.debug("Channel {} edited successfully", channelId);
+            // Prepare update data
+            Map<String, Object> updateData = new HashMap<>();
+            updateData.put("channelId", channelId);
+            updateData.put("oldName", oldName);
+            updateData.put("newName", newName);
+            updateData.put("timestamp", System.currentTimeMillis());
+            updateData.put("updatedBy", username);
+            
+            // Broadcast to all channels to update their channel lists
+            for (Map.Entry<Long, Set<SseEmitter>> entry : channelEmitters.entrySet()) {
+                Long targetChannelId = entry.getKey();
+                Set<SseEmitter> emitters = entry.getValue();
+                
+                if (emitters != null && !emitters.isEmpty()) {
+                    List<SseEmitter> deadEmitters = new ArrayList<>();
+                    
+                    // Add channel list update flag for non-current channel clients
+                    Map<String, Object> broadcastData = new HashMap<>(updateData);
+                    broadcastData.put("updateChannelList", !targetChannelId.equals(channelId));
+                    
+                    emitters.forEach(emitter -> {
+                        try {
+                            emitter.send(SseEmitter.event()
+                                .name("channel_updated")
+                                .data(broadcastData));
+                            logger.debug("Sent channel update to client in channel {}", targetChannelId);
+                        } catch (Exception e) {
+                            logger.debug("Failed to send channel update to client in channel {}: {}", 
+                                targetChannelId, e.getMessage());
+                            deadEmitters.add(emitter);
+                        }
+                    });
+                    
+                    // Clean up dead emitters
+                    deadEmitters.forEach(emitter -> {
+                        emitters.remove(emitter);
+                        emitter.complete();
+                    });
+                    
+                    if (emitters.isEmpty()) {
+                        channelEmitters.remove(targetChannelId);
+                    }
+                }
+            }
+            
+            logger.debug("Channel {} update broadcast complete", channelId);
             redirectAttributes.addFlashAttribute("success", "Channel name updated successfully");
             return "redirect:/channel/" + channelId + "?windowId=" + windowId;
         } catch (ChangeSetPersister.NotFoundException e) {
@@ -524,5 +571,39 @@ public class ChannelController {
     public String handleInvalidChannelUrl() {
         logger.debug("Invalid channel URL accessed, redirecting to error page");
         return "error/no-window-id";
+    }
+
+    @GetMapping(value = "/channels", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public List<Map<String, Object>> getChannelsList(HttpSession session,
+                                                   @RequestParam(required = false) String windowId) {
+        try {
+            logger.debug("Getting channels list for windowId: {}", windowId);
+            
+            if (windowId == null || windowId.trim().isEmpty()) {
+                logger.warn("No windowId provided for channels request");
+                return Collections.emptyList();
+            }
+
+            String username = (String) session.getAttribute("username_" + windowId);
+            if (username == null) {
+                logger.warn("No user session found for windowId: {}", windowId);
+                return Collections.emptyList();
+            }
+
+            List<Channel> channels = channelService.getAllChannels();
+            return channels.stream()
+                .map(channel -> {
+                    Map<String, Object> channelData = new HashMap<>();
+                    channelData.put("channelId", channel.getChannelId());
+                    channelData.put("channelName", channel.getChannelName());
+                    channelData.put("activeUsers", getActiveUsersCount(channel.getChannelId()));
+                    return channelData;
+                })
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error getting channels list: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
     }
 }

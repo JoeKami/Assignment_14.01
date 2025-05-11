@@ -8,9 +8,11 @@
     --secondary-text: rgba(255, 255, 255, 0.9);
     --border-color: rgba(255, 255, 255, 0.2);
     --hover-bg: rgba(255, 255, 255, 0.2);
-    --message-sent-bg: linear-gradient(135deg, #1a365d, #2c5282);
-    --message-received-bg: #2d3748;
-    --message-received-text: #e2e8f0;
+    --message-sent-bg: linear-gradient(135deg, rgba(255, 183, 197, 0.9), rgba(255, 150, 150, 0.9));
+    --message-received-bg: linear-gradient(135deg, rgba(173, 216, 230, 0.9), rgba(135, 206, 235, 0.9));
+    --message-received-text: #ffffff;
+    --message-sent-shadow: rgba(255, 150, 150, 0.2);
+    --message-received-shadow: rgba(135, 206, 235, 0.2);
     --dropdown-bg: rgba(255, 255, 255, 0.95);
     --dropdown-text: #333;
     --modal-bg: rgba(255, 255, 255, 0.95);
@@ -29,9 +31,11 @@
     --secondary-text: #a0aec0;
     --border-color: rgba(255, 255, 255, 0.1);
     --hover-bg: rgba(255, 255, 255, 0.1);
-    --message-sent-bg: linear-gradient(135deg, #2b6cb0, #1a365d);
-    --message-received-bg: #2d3748;
-    --message-received-text: #e2e8f0;
+    --message-sent-bg: linear-gradient(135deg, rgba(147, 51, 234, 0.8), rgba(126, 34, 206, 0.8));
+    --message-received-bg: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(37, 99, 235, 0.8));
+    --message-received-text: #ffffff;
+    --message-sent-shadow: rgba(147, 51, 234, 0.2);
+    --message-received-shadow: rgba(59, 130, 246, 0.2);
     --dropdown-bg: rgba(45, 55, 72, 0.98);
     --dropdown-text: #e2e8f0;
     --modal-bg: rgba(45, 55, 72, 0.98);
@@ -329,14 +333,16 @@ body {
     min-height: 60px;
     display: flex;
     align-items: center;
+    position: relative;
 }
 
 .sidebar-header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
     width: 100%;
+    gap: 10px;
+    padding: 0 10px;
 }
 
 .sidebar-header h2 {
@@ -347,6 +353,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    flex-shrink: 0;
 }
 
 .channel-list {
@@ -416,6 +423,44 @@ body {
     border-bottom: 1px solid var(--border-color);
     background: var(--sidebar-bg);
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.chat-header-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.active-users, .last-activity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--secondary-text);
+    font-size: 0.9em;
+    padding: 6px 12px;
+    background: var(--input-bg);
+    border-radius: 15px;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(4px);
+    transition: all 0.3s ease;
+}
+
+.active-users:hover, .last-activity:hover {
+    background: var(--hover-bg);
+    transform: translateY(-1px);
+}
+
+.active-users i, .last-activity i {
+    font-size: 1em;
+    color: var(--text-color);
 }
 
 .chat-header h2 {
@@ -428,13 +473,14 @@ body {
 /* Message Styles */
 .message-bubble {
     max-width: 70%;
-    min-width: 60px; /* Minimum width for very short messages */
+    min-width: 60px;
     padding: 12px 18px;
     position: relative;
     backdrop-filter: blur(4px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px var(--shadow-color);
     border-radius: 25px;
-    display: inline-block; /* Allow bubble to fit content */
+    display: inline-block;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .message-sent, .message-received {
@@ -457,7 +503,7 @@ body {
     background: var(--message-sent-bg);
     color: #ffffff;
     border-radius: 25px 25px 5px 25px;
-    box-shadow: 0 4px 15px rgba(44, 82, 130, 0.3);
+    box-shadow: 0 4px 15px var(--message-sent-shadow);
 }
 
 /* Received message styling */
@@ -465,7 +511,7 @@ body {
     background: var(--message-received-bg);
     color: var(--message-received-text);
     border-radius: 25px 25px 25px 5px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px var(--message-received-shadow);
 }
 
 /* Refined cloud effect with pseudo-elements */
@@ -478,7 +524,7 @@ body {
     height: 12px;
     background: var(--message-sent-bg);
     border-radius: 50%;
-    box-shadow: 0 4px 15px rgba(44, 82, 130, 0.3);
+    box-shadow: 0 4px 15px var(--message-sent-shadow);
     z-index: -1;
 }
 
@@ -491,7 +537,7 @@ body {
     height: 8px;
     background: var(--message-sent-bg);
     border-radius: 50%;
-    box-shadow: 0 4px 15px rgba(44, 82, 130, 0.3);
+    box-shadow: 0 4px 15px var(--message-sent-shadow);
     z-index: -1;
 }
 
@@ -504,7 +550,7 @@ body {
     height: 12px;
     background: var(--message-received-bg);
     border-radius: 50%;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px var(--message-received-shadow);
     z-index: -1;
 }
 
@@ -517,7 +563,7 @@ body {
     height: 8px;
     background: var(--message-received-bg);
     border-radius: 50%;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px var(--message-received-shadow);
     z-index: -1;
 }
 
@@ -1125,8 +1171,12 @@ body {
 .sidebar-header .user-bubble-container {
     position: relative;
     margin: 0;
-    left: 0; /* Reset the left position */
+    left: 0;
     top: 0;
+    display: flex;
+    justify-content: center;
+    min-width: 0; /* Allow container to shrink */
+    flex: 1; /* Take remaining space */
 }
 
 .sidebar-header .user-bubble {
@@ -1143,31 +1193,34 @@ body {
     transition: all 0.3s ease;
     font-size: 0.9em;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    min-width: 120px; /* Ensure minimum width for dropdown visibility */
+    min-width: 0; /* Allow bubble to shrink */
+    max-width: 100%; /* Prevent overflow */
+    width: fit-content; /* Size to content */
+    white-space: nowrap; /* Keep text in one line */
+    overflow: hidden; /* Hide overflow */
 }
 
-.sidebar-header .user-bubble:hover {
-    background: var(--hover-bg);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.sidebar-header .user-bubble span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0; /* Allow text to shrink */
 }
 
 .sidebar-header .user-bubble i {
     font-size: 0.8em;
     transition: transform 0.3s ease;
+    flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
-.sidebar-header .user-bubble.active i {
-    transform: rotate(180deg);
-}
-
-/* Update dropdown menu position for sidebar */
+/* Update dropdown menu position */
 .sidebar-header .dropdown-menu {
     position: absolute;
     top: calc(100% + 10px);
-    right: -30px; /* Move dropdown menu to the right to prevent cutoff */
+    right: 0;
     min-width: 180px;
     z-index: 1002;
+    width: max-content; /* Size to content */
 }
 
 /* Collapsed state adjustments */
@@ -1175,10 +1228,12 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 10px;
+    padding: 0;
 }
 
 .channel-sidebar.collapsed .user-bubble-container {
-    left: 0; /* Reset left position in collapsed state */
+    width: 40px; /* Fixed width in collapsed state */
+    flex: none;
 }
 
 .channel-sidebar.collapsed .user-bubble {
@@ -1187,19 +1242,36 @@ body {
     padding: 0;
     justify-content: center;
     border-radius: 50%;
-    min-width: unset; /* Remove minimum width in collapsed state */
-}
-
-.channel-sidebar.collapsed .dropdown-menu {
-    right: -60px; /* Adjust dropdown position in collapsed state */
+    min-width: unset;
 }
 
 .channel-sidebar.collapsed .user-bubble span {
     display: none;
 }
 
-.channel-sidebar.collapsed .user-bubble i {
-    margin: 0;
+.channel-sidebar.collapsed .dropdown-menu {
+    right: -60px;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 400px) {
+    .sidebar-header {
+        padding: 10px;
+    }
+
+    .sidebar-header-content {
+        padding: 0 5px;
+        gap: 5px;
+    }
+
+    .sidebar-header h2 {
+        font-size: 1.1em;
+    }
+
+    .sidebar-header .user-bubble {
+        padding: 6px 12px;
+        font-size: 0.85em;
+    }
 }
 
 /* Add responsive adjustments for smaller screens */
@@ -1485,5 +1557,23 @@ body {
         margin-left: 60px;
         left: 60px;
         width: calc(100% - 60px);
+    }
+}
+
+/* Responsive adjustments for chat header */
+@media screen and (max-width: 600px) {
+    .chat-header {
+        padding: 15px;
+    }
+
+    .chat-header-info {
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .active-users, .last-activity {
+        font-size: 0.85em;
+        padding: 4px 10px;
     }
 } 
