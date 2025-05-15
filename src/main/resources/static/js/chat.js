@@ -245,23 +245,20 @@ function setupEventSource() {
                 }
             };
 
-            // Update all instances of the channel name in the UI
-            const updateSelectors = [
+            // Update channel list items regardless of current channel
+            const channelListSelectors = [
                 // Channel list items
                 `.channel-list a[href*="/channel/${data.channelId}"] span`,
                 `.channel-list a[href*="/channel/${data.channelId}"]`,
                 // Channel items
                 `.channel-item a[href*="/channel/${data.channelId}"] span`,
                 `.channel-item a[href*="/channel/${data.channelId}"]`,
-                // Header elements
-                `.page-header h1`,
-                `.chat-header h2`,
                 // Any other elements that might contain the channel name
                 `[data-channel-id="${data.channelId}"]`
             ];
 
             let updatedElements = 0;
-            updateSelectors.forEach(selector => {
+            channelListSelectors.forEach(selector => {
                 const elements = document.querySelectorAll(selector);
                 console.log(`Found ${elements.length} elements matching selector: ${selector}`);
                 elements.forEach(element => {
@@ -287,9 +284,15 @@ function setupEventSource() {
 
             console.log(`Updated ${updatedElements} elements with new channel name`);
 
-            // If this is the current channel, update additional elements
+            // Only update page header and chat header if this is the current channel
             if (data.channelId === currentChannelId) {
                 console.log('Updating current channel display');
+                // Update page header and chat header
+                const pageHeader = document.querySelector('.page-header h1');
+                const chatHeader = document.querySelector('.chat-header h2');
+                if (pageHeader) updateChannelName(pageHeader);
+                if (chatHeader) updateChannelName(chatHeader);
+                
                 // Update page title
                 document.title = `${data.newName} - Chat Channel`;
 
