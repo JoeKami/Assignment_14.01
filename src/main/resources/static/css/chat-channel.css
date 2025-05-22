@@ -99,62 +99,51 @@ body {
     display: flex;
     height: 100vh;
     width: 100%;
-    overflow: hidden;
     position: fixed;
     top: 0;
     left: 0;
-    padding-top: 80px; /* Reduced padding */
+    padding-top: 80px;
+    box-sizing: border-box;
 }
 
-.channel-list {
-    width: 250px;
-    background-color: var(--channel-list-bg);
-    border-right: 1px solid var(--border-color);
+.chat-main {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+    height: calc(100vh - 80px); /* Subtract header height */
     display: flex;
     flex-direction: column;
-    height: 100%;
-    border-radius: 0 0 20px 20px; /* Add rounded bottom corners */
-    margin: 0 20px; /* Add some margin on the sides */
-}
-
-.channel-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
 
 .messages-container {
-    flex: 1 1 auto; /* Allow container to grow and shrink */
+    flex: 1;
     overflow-y: auto;
     padding: 15px;
-    padding-bottom: 100px;
+    padding-bottom: 100px; /* Space for input container */
     display: flex;
     flex-direction: column;
     gap: 10px;
-    height: auto; /* Remove fixed height */
-    min-height: 150px; /* Reduced minimum height */
-    width: 100%;
-    box-sizing: border-box;
     position: relative;
-    margin-bottom: 80px; /* Reduced margin */
+    z-index: 1;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .message-input-container {
-    position: fixed;
-    bottom: 15px;
-    left: 280px;
-    right: 20px;
+    position: absolute; /* Changed from fixed to absolute */
+    bottom: 0;
+    left: 0;
+    right: 0;
     background: var(--sidebar-bg);
-    padding: 12px;
-    border-radius: 15px;
-    border: 1px solid var(--border-color);
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
     backdrop-filter: blur(8px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    width: calc(100% - 300px);
-    transition: all 0.1s ease;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
     z-index: 10;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .cloud-input-wrapper {
@@ -375,7 +364,7 @@ body {
     padding: 12px 20px;
     color: #ffffff;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 12px;
     margin: 4px 8px;
     font-weight: 500;
@@ -383,41 +372,150 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    position: relative;
+    background: transparent;
 }
 
-.channel-list li a:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateX(5px);
-    color: #ffffff;
+/* Channel indicator styles */
+.channel-list li a::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--channel-color, rgba(255, 255, 255, 0.2));
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.8;
 }
 
-.channel-list li a.active {
-    background: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    color: #ffffff;
-}
+/* Subtle, professional channel colors */
+.channel-list li:nth-child(1) a::before { --channel-color: rgba(255, 255, 255, 0.9); }
+.channel-list li:nth-child(2) a::before { --channel-color: rgba(173, 216, 230, 0.9); }
+.channel-list li:nth-child(3) a::before { --channel-color: rgba(144, 238, 144, 0.9); }
+.channel-list li:nth-child(4) a::before { --channel-color: rgba(255, 218, 185, 0.9); }
+.channel-list li:nth-child(5) a::before { --channel-color: rgba(221, 160, 221, 0.9); }
+.channel-list li:nth-child(6) a::before { --channel-color: rgba(176, 224, 230, 0.9); }
+.channel-list li:nth-child(7) a::before { --channel-color: rgba(255, 192, 203, 0.9); }
+.channel-list li:nth-child(8) a::before { --channel-color: rgba(152, 251, 152, 0.9); }
 
 .channel-list li a i {
+    margin-left: 24px;
     margin-right: 12px;
-    font-size: 1.2em;
-    color: #ffffff;
+    font-size: 1.1em;
+    color: var(--text-color);
+    opacity: 0.9;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.channel-list li a span {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.9;
+}
+
+/* Hover state */
+.channel-list li a:hover {
+    background: var(--hover-bg);
+    transform: translateX(4px);
+}
+
+.channel-list li a:hover::before {
+    transform: translateY(-50%) scale(1.2);
+    opacity: 1;
+}
+
+/* Active state */
+.channel-list li a.active {
+    background: var(--hover-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.channel-list li a.active::before {
+    transform: translateY(-50%) scale(1.3);
+    opacity: 1;
+    box-shadow: 0 0 8px var(--channel-color);
+}
+
+/* Collapsed state */
+.channel-sidebar.collapsed .channel-list li a {
+    padding: 12px 0;
+    justify-content: center;
+    margin: 4px 0;
+    background: transparent;
+}
+
+.channel-sidebar.collapsed .channel-list li a::before {
+    width: 32px;
+    height: 32px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--channel-color);
+    opacity: 0.8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.channel-sidebar.collapsed .channel-list li a i {
+    display: none;
+}
+
+.channel-sidebar.collapsed .channel-list li a span {
+    opacity: 0;
+    width: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Collapsed hover state */
+.channel-sidebar.collapsed .channel-list li a:hover {
+    transform: none;
+    background: transparent;
+}
+
+.channel-sidebar.collapsed .channel-list li a:hover::before {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Collapsed active state */
+.channel-sidebar.collapsed .channel-list li a.active {
+    background: transparent;
+}
+
+.channel-sidebar.collapsed .channel-list li a.active::before {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+    box-shadow: 0 0 12px var(--channel-color);
+}
+
+/* Dark mode adjustments */
+.dark-mode .channel-list li a::before {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .channel-list li a:hover::before {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .channel-list li a.active::before {
+    box-shadow: 0 0 12px var(--channel-color);
+}
+
+.dark-mode .channel-sidebar.collapsed .channel-list li a::before {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .channel-sidebar.collapsed .channel-list li a:hover::before {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.dark-mode .channel-sidebar.collapsed .channel-list li a.active::before {
+    box-shadow: 0 0 15px var(--channel-color);
 }
 
 /* Main Chat Area Styles */
-.chat-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: rgba(255, 255, 255, 0.08);
-    margin-left: 280px;
-    height: calc(100vh - 80px); /* Adjusted height */
-    margin-top: 60px; /* Reduced margin */
-    width: calc(100% - 280px);
-    position: relative;
-    transition: margin-left 0.1s ease, width 0.1s ease;
-    min-height: 300px; /* Reduced minimum height */
-}
-
 .chat-header {
     padding: 25px;
     border-bottom: 1px solid var(--border-color);
@@ -1054,15 +1152,7 @@ body {
 
 /* Update gradient overlay */
 .messages-container::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 50px; /* Increased gradient height */
-    background: linear-gradient(to bottom, transparent, var(--sidebar-bg));
-    pointer-events: none;
-    opacity: 0.2; /* Reduced opacity for more subtle effect */
+    display: none;
 }
 
 /* Remove z-index from messages */
@@ -1128,43 +1218,74 @@ body {
     transition: transform 0.2s ease;
 }
 
-/* Collapsed state */
+/* Collapsed state adjustments */
 .channel-sidebar.collapsed {
     width: 60px;
     min-width: 60px;
 }
 
-.channel-sidebar.collapsed .sidebar-header h2,
-.channel-sidebar.collapsed .channel-list li a span {
-    display: none;
+.channel-sidebar.collapsed .sidebar-header {
+    padding: 10px 0;
+    justify-content: center;
+}
+
+.channel-sidebar.collapsed .sidebar-header-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.channel-sidebar.collapsed .sidebar-header h2 {
+    display: block;
+    font-size: 1.2em;
+    content: "Ch";
 }
 
 .channel-sidebar.collapsed .sidebar-toggle i {
     transform: rotate(180deg);
 }
 
-.channel-sidebar.collapsed + .chat-main,
-.channel-sidebar.collapsed ~ .page-header,
-.channel-sidebar.collapsed ~ .user-bubble-container,
-.channel-sidebar.collapsed ~ .message-input-container {
+.channel-sidebar.collapsed + .chat-main {
     margin-left: 60px;
-    left: 60px;
     width: calc(100% - 60px);
 }
 
-/* Adjust channel list items for collapsed state */
-.channel-list li a {
-    padding: 15px;
-    justify-content: center;
-}
-
-.channel-list li a i {
-    margin: 0;
-    font-size: 1.4em;
+.channel-sidebar.collapsed + .chat-main .message-input-container {
+    left: 60px;
+    width: calc(100% - 80px);
 }
 
 .channel-sidebar.collapsed .channel-list li a {
-    padding: 15px 0;
+    padding: 12px 0;
+    justify-content: center;
+    margin: 4px 0;
+    position: relative;
+}
+
+.channel-sidebar.collapsed .channel-list li a span {
+    display: none;
+}
+
+.channel-sidebar.collapsed .channel-list li a::before {
+    content: '☁';
+    font-size: 1.4em;
+    color: var(--text-color);
+    opacity: 0.9;
+    transition: all 0.3s ease;
+}
+
+.channel-sidebar.collapsed .channel-list li a:hover::before {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.channel-sidebar.collapsed .channel-list li a.active::before {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.channel-sidebar.collapsed .channel-list li a i {
+    display: none;
 }
 
 /* Update user bubble styles for sidebar */
@@ -1175,8 +1296,8 @@ body {
     top: 0;
     display: flex;
     justify-content: center;
-    min-width: 0; /* Allow container to shrink */
-    flex: 1; /* Take remaining space */
+    min-width: 0;
+    flex: 1;
 }
 
 .sidebar-header .user-bubble {
@@ -1193,46 +1314,16 @@ body {
     transition: all 0.3s ease;
     font-size: 0.9em;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    min-width: 0; /* Allow bubble to shrink */
-    max-width: 100%; /* Prevent overflow */
-    width: fit-content; /* Size to content */
-    white-space: nowrap; /* Keep text in one line */
-    overflow: hidden; /* Hide overflow */
-}
-
-.sidebar-header .user-bubble span {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 100%;
+    width: fit-content;
     white-space: nowrap;
-    min-width: 0; /* Allow text to shrink */
+    overflow: hidden;
 }
 
-.sidebar-header .user-bubble i {
-    font-size: 0.8em;
-    transition: transform 0.3s ease;
-    flex-shrink: 0; /* Prevent icon from shrinking */
-}
-
-/* Update dropdown menu position */
-.sidebar-header .dropdown-menu {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    min-width: 180px;
-    z-index: 1002;
-    width: max-content; /* Size to content */
-}
-
-/* Collapsed state adjustments */
-.channel-sidebar.collapsed .sidebar-header-content {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 0;
-}
-
+/* Collapsed state user bubble adjustments */
 .channel-sidebar.collapsed .user-bubble-container {
-    width: 40px; /* Fixed width in collapsed state */
+    width: 40px;
     flex: none;
 }
 
@@ -1253,70 +1344,22 @@ body {
     right: -60px;
 }
 
-/* Responsive adjustments */
-@media screen and (max-width: 400px) {
-    .sidebar-header {
-        padding: 10px;
-    }
-
-    .sidebar-header-content {
-        padding: 0 5px;
-        gap: 5px;
-    }
-
-    .sidebar-header h2 {
-        font-size: 1.1em;
-    }
-
-    .sidebar-header .user-bubble {
-        padding: 6px 12px;
-        font-size: 0.85em;
-    }
-}
-
-/* Add responsive adjustments for smaller screens */
+/* Restore responsive styles */
 @media screen and (max-height: 700px) {
     .chat-container {
         padding-top: 60px;
     }
 
     .chat-main {
-        margin-top: 40px;
         height: calc(100vh - 60px);
     }
 
     .messages-container {
-        padding: 10px;
-        padding-bottom: 80px;
-        margin-bottom: 70px;
-        gap: 8px;
+        padding-bottom: 90px;
     }
 
     .message-input-container {
-        bottom: 10px;
-        padding: 10px;
-    }
-
-    .message-bubble {
-        padding: 10px 15px;
-    }
-
-    .message-header {
-        margin-bottom: 4px;
-    }
-
-    .user-avatar {
-        width: 24px;
-        height: 24px;
-        min-width: 24px;
-    }
-
-    .username {
-        font-size: 0.9em;
-    }
-
-    .timestamp {
-        font-size: 0.75em;
+        padding: 12px;
     }
 }
 
@@ -1326,238 +1369,21 @@ body {
     }
 
     .chat-main {
-        margin-top: 30px;
         height: calc(100vh - 40px);
     }
 
     .messages-container {
-        padding: 8px;
-        padding-bottom: 60px;
-        margin-bottom: 60px;
-        gap: 6px;
+        padding-bottom: 80px;
     }
 
     .message-input-container {
-        bottom: 8px;
-        padding: 8px;
-    }
-
-    .message-bubble {
-        padding: 8px 12px;
-    }
-
-    .message-content {
-        font-size: 0.95em;
-    }
-}
-
-/* Responsive adjustments for header */
-@media screen and (max-height: 700px) {
-    .page-header {
-        padding: 10px 0;
-        max-height: 60px;
-    }
-
-    .page-header h1 {
-        font-size: 1.4em;
-        letter-spacing: 0.5px;
-    }
-
-    .channel-actions {
-        margin-top: 5px;
-        gap: 6px;
-    }
-
-    .edit-channel-btn,
-    .delete-channel-btn {
-        padding: 4px 10px;
-        font-size: 0.8em;
-    }
-
-    .chat-container {
-        padding-top: 60px; /* Adjust container padding to match new header height */
-    }
-
-    .chat-main {
-        margin-top: 40px;
-    }
-}
-
-@media screen and (max-height: 500px) {
-    .page-header {
-        padding: 8px 0;
-        max-height: 45px;
-    }
-
-    .page-header h1 {
-        font-size: 1.2em;
-        letter-spacing: 0;
-    }
-
-    .channel-actions {
-        margin-top: 3px;
-        gap: 4px;
-    }
-
-    .edit-channel-btn,
-    .delete-channel-btn {
-        padding: 3px 8px;
-        font-size: 0.75em;
-    }
-
-    .chat-container {
-        padding-top: 45px; /* Adjust container padding to match new header height */
-    }
-
-    .chat-main {
-        margin-top: 30px;
-    }
-}
-
-/* Add styles for very narrow screens */
-@media screen and (max-width: 600px) {
-    .page-header {
-        margin: 0 10px;
-    }
-
-    .page-header h1 {
-        font-size: 1.2em;
-        padding: 0 10px;
-    }
-
-    .channel-actions {
-        gap: 4px;
-    }
-
-    .edit-channel-btn,
-    .delete-channel-btn {
-        padding: 4px 8px;
-        font-size: 0.75em;
-    }
-}
-
-/* Responsive adjustments for sidebar */
-@media screen and (max-height: 700px) {
-    .channel-sidebar {
-        min-width: 180px;
-    }
-
-    .sidebar-header {
         padding: 10px;
-        min-height: 50px;
-    }
-
-    .sidebar-header h2 {
-        font-size: 1.2em;
-    }
-
-    .channel-list li a {
-        padding: 10px 15px;
-        margin: 3px 6px;
-        font-size: 0.95em;
-    }
-
-    .channel-list li a i {
-        font-size: 1.1em;
-        margin-right: 8px;
     }
 }
 
-@media screen and (max-height: 500px) {
-    .channel-sidebar {
-        min-width: 160px;
-    }
-
-    .sidebar-header {
-        padding: 8px;
-        min-height: 40px;
-    }
-
-    .sidebar-header h2 {
-        font-size: 1.1em;
-    }
-
-    .channel-list li a {
-        padding: 8px 12px;
-        margin: 2px 4px;
-        font-size: 0.9em;
-    }
-
-    .channel-list li a i {
-        font-size: 1em;
-        margin-right: 6px;
-    }
-}
-
-/* Collapsed state adjustments */
-.channel-sidebar.collapsed {
-    width: 60px;
-    min-width: 60px;
-}
-
-.channel-sidebar.collapsed .sidebar-header {
-    padding: 10px 0;
-    justify-content: center;
-}
-
-.channel-sidebar.collapsed .sidebar-header-content {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-.channel-sidebar.collapsed .sidebar-header h2 {
-    display: none;
-}
-
-.channel-sidebar.collapsed .channel-list li a {
-    padding: 12px 0;
-    justify-content: center;
-    margin: 4px 0;
-}
-
-.channel-sidebar.collapsed .channel-list li a i {
-    margin: 0;
-    font-size: 1.3em;
-}
-
-/* Update chat main and other elements to respond to sidebar changes */
-.chat-main {
-    margin-left: 280px;
-    width: calc(100% - 280px);
-    transition: margin-left 0.1s ease, width 0.1s ease;
-}
-
-.page-header {
-    left: 280px;
-    transition: left 0.1s ease;
-}
-
-.message-input-container {
-    left: 280px;
-    width: calc(100% - 300px);
-    transition: left 0.1s ease, width 0.1s ease;
-}
-
-/* Responsive adjustments for chat elements */
-@media screen and (max-height: 700px) {
-    .channel-sidebar.collapsed + .chat-main,
-    .channel-sidebar.collapsed ~ .page-header,
-    .channel-sidebar.collapsed ~ .message-input-container {
-        margin-left: 60px;
-        left: 60px;
-        width: calc(100% - 60px);
-    }
-}
-
-@media screen and (max-height: 500px) {
-    .channel-sidebar.collapsed + .chat-main,
-    .channel-sidebar.collapsed ~ .page-header,
-    .channel-sidebar.collapsed ~ .message-input-container {
-        margin-left: 60px;
-        left: 60px;
-        width: calc(100% - 60px);
-    }
+/* Ensure messages scroll to bottom when new ones arrive */
+.messages-container {
+    scroll-behavior: smooth;
 }
 
 /* Responsive adjustments for chat header */
@@ -1576,4 +1402,18 @@ body {
         font-size: 0.85em;
         padding: 4px 10px;
     }
+}
+
+/* Update page header positioning */
+.page-header {
+    position: fixed;
+    top: 0;
+    left: 280px;
+    right: 0;
+    z-index: 1000;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.channel-sidebar.collapsed + .chat-main .page-header {
+    left: 60px;
 } 
